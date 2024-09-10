@@ -1,9 +1,5 @@
-import folder_paths
-from PIL import Image, ImageOps
-import numpy as np
-import torch
 
-class ComfyUIDeployExternalText:
+class OpenArtDeployText:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -40,5 +36,5 @@ class ComfyUIDeployExternalText:
         return [default_value]
 
 
-NODE_CLASS_MAPPINGS = {"ComfyUIDeployExternalText": ComfyUIDeployExternalText}
-NODE_DISPLAY_NAME_MAPPINGS = {"ComfyUIDeployExternalText": "External Text (ComfyUI Deploy)"}
+NODE_CLASS_MAPPINGS = {"OpenArtDeployText": OpenArtDeployText}
+NODE_DISPLAY_NAME_MAPPINGS = {"OpenArtDeployText": "OpenArt Text"}

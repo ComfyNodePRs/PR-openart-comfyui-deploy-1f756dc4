@@ -1,25 +1,9 @@
-"""
-@author: BennyKok
-@title: comfyui-deploy
-@nickname: Comfy Deploy
-@description: 
-"""
 import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-import inspect
-import sys
 import importlib
-import subprocess
-import requests
-import folder_paths
-from folder_paths import add_model_folder_path, get_filename_list, get_folder_paths
-from tqdm import tqdm
-
-#from . import custom_routes
-# import routes
 
 ag_path = os.path.join(os.path.dirname(__file__))
 
@@ -30,7 +14,7 @@ def append_to_sys_path(path):
     if path not in sys.path:
         sys.path.append(path)
 
-paths = ["comfy-nodes"]
+paths = ["openart-nodes"]
 files = []
 
 for path in paths:
