@@ -522,6 +522,7 @@ async function deployWorkflow() {
     if (!text) return;
     console.log(text);
     app.graph.beforeChange();
+    registerCustomNodes();
     var node = LiteGraph.createNode("ComfyDeploy");
     node.configure({
       widgets_values: [text],
