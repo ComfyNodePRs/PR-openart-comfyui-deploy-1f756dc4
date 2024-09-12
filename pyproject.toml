@@ -1,6 +1,6 @@
 [project]
 name = "openart-comfyui-deploy"
-description = ""
+description = "NODES: External Boolean (ComfyUI Deploy), External Checkpoint (ComfyUI Deploy), External Image (ComfyUI Deploy), External Video (ComfyUI Deploy x VHS), OpenArt Text, Image Websocket Output (ComfyDeploy), ..."
 version = "1.0.0"
 license = "LICENSE"
 dependencies = ["aiofiles", "pydantic", "opencv-python", "imageio-ffmpeg"]
