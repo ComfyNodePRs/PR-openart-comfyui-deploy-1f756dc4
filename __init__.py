@@ -1,9 +1,10 @@
 import os
 import sys
+import importlib
+from . import custom_routes
 
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-import importlib
 
 ag_path = os.path.join(os.path.dirname(__file__))
 

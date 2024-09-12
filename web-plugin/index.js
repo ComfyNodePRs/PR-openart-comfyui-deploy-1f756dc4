@@ -86,11 +86,10 @@ function dispatchAPIEventData(data) {
 /** @typedef {import('../../../web/types/comfy.js').ComfyExtension} ComfyExtension*/
 /** @type {ComfyExtension} */
 const ext = {
-  name: "BennyKok.ComfyUIDeploy",
+  name: "OpenArt.ComfyUIDeploy",
 
   init(app) {
-    addButton();
-
+    addDeployButton();
     const queryParams = new URLSearchParams(window.location.search);
     const workflow_version_id = queryParams.get("workflow_version_id");
     const auth_token = queryParams.get("auth_token");
@@ -192,18 +191,19 @@ const ext = {
 
   registerCustomNodes() {
     /** @type {LGraphNode}*/
-    class ComfyDeploy {
+    class ComfyDeploy extends LiteGraph.LGraphNode {
       color = LGraphCanvas.node_colors.yellow.color;
       bgcolor = LGraphCanvas.node_colors.yellow.bgcolor;
       groupcolor = LGraphCanvas.node_colors.yellow.groupcolor;
       constructor() {
+        super();
+        this.title = "OpenArt Comfy Deploy";
         if (!this.properties) {
           this.properties = {};
           this.properties.workflow_name = "";
           this.properties.workflow_id = "";
           this.properties.version = "";
         }
-
         ComfyWidgets.STRING(
           this,
           "workflow_name",
@@ -237,17 +237,8 @@ const ext = {
           app,
         );
 
-        // this.widgets.forEach((w) => {
-        //   // w.computeSize = () => [200,10]
-        //   w.computedHeight = 2;
-        // })
-
         this.widgets_start_y = 10;
         this.setSize(this.computeSize());
-
-        // const config = {  };
-
-        // console.log(this);
         this.serialize_widgets = true;
         this.isVirtualNode = true;
       }
@@ -259,7 +250,7 @@ const ext = {
       "ComfyDeploy",
       Object.assign(ComfyDeploy, {
         title_mode: LiteGraph.NORMAL_TITLE,
-        title: "Comfy Deploy",
+        title: "OpenArt Comfy Deploy",
         collapsable: true,
       }),
     );
@@ -271,7 +262,6 @@ const ext = {
     // const graphCanvas = document.getElementById("graph-canvas");
 
     window.addEventListener("message", async (event) => {
-      //   console.log("message", event);
       try {
         const message = JSON.parse(event.data);
         if (message.type === "graph_load") {
@@ -310,7 +300,6 @@ const ext = {
             widgets_values: message.data.widgets_values,
           });
 
-          console.log("node", node);
 
           const graphMouse = app.canvas.graph_mouse;
 
@@ -412,91 +401,91 @@ function showError(title, message) {
   );
 }
 
-function createDynamicUIHtml(data) {
-  console.log(data);
-  let html =
-    '<div style="min-width: 600px; max-width: 1024px; margin: 14px auto; display: flex; flex-direction: column; gap: 24px;">';
-  const bgcolor = "var(--comfy-input-bg)";
-  const evenBg = "var(--border-color)";
-  const textColor = "var(--input-text)";
+// function createDynamicUIHtml(data) {
+//   console.log(data);
+//   let html =
+//     '<div style="min-width: 600px; max-width: 1024px; margin: 14px auto; display: flex; flex-direction: column; gap: 24px;">';
+//   const bgcolor = "var(--comfy-input-bg)";
+//   const evenBg = "var(--border-color)";
+//   const textColor = "var(--input-text)";
 
-  // Custom Nodes
-  html += `<div style="background-color: ${bgcolor}; padding: 24px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">`;
-  html +=
-    '<h2 style="margin-top: 0px; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Custom Nodes</h2>';
+//   // Custom Nodes
+//   html += `<div style="background-color: ${bgcolor}; padding: 24px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">`;
+//   html +=
+//     '<h2 style="margin-top: 0px; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Custom Nodes</h2>';
 
-  if (data.missing_nodes?.length > 0) {
-    html += `
-      <div style="border-bottom: 1px solid #e2e8f0; padding: 4px 12px; background-color: ${evenBg}">
-          <h3 style="font-size: 14px; font-weight: semibold; margin-bottom: 8px;">Missing Nodes</h3>
-          <p style="font-size: 12px;">These nodes are not found with any matching custom_nodes in the ComfyUI Manager Database</p>
-          ${data.missing_nodes
-            .map((node) => {
-              return `<p style="font-size: 14px; color: #d69e2e;">${node}</p>`;
-            })
-            .join("")}
-      </div>
-  `;
-  }
+//   if (data.missing_nodes?.length > 0) {
+//     html += `
+//       <div style="border-bottom: 1px solid #e2e8f0; padding: 4px 12px; background-color: ${evenBg}">
+//           <h3 style="font-size: 14px; font-weight: semibold; margin-bottom: 8px;">Missing Nodes</h3>
+//           <p style="font-size: 12px;">These nodes are not found with any matching custom_nodes in the ComfyUI Manager Database</p>
+//           ${data.missing_nodes
+//             .map((node) => {
+//               return `<p style="font-size: 14px; color: #d69e2e;">${node}</p>`;
+//             })
+//             .join("")}
+//       </div>
+//   `;
+//   }
 
-  Object.values(data.custom_nodes).forEach((node) => {
-    html += `
-          <div style="border-bottom: 1px solid #e2e8f0; padding-top: 16px;">
-              <a href="${
-                node.url
-              }" target="_blank" style="font-size: 18px; font-weight: semibold; color: white; text-decoration: none;">${
-                node.name
-              }</a>
-              <p style="font-size: 14px; color: #4b5563;">${node.hash}</p>
-              ${
-                node.warning
-                  ? `<p style="font-size: 14px; color: #d69e2e;">${node.warning}</p>`
-                  : ""
-              }
-          </div>
-      `;
-  });
-  html += "</div>";
+//   Object.values(data.custom_nodes).forEach((node) => {
+//     html += `
+//           <div style="border-bottom: 1px solid #e2e8f0; padding-top: 16px;">
+//               <a href="${
+//                 node.url
+//               }" target="_blank" style="font-size: 18px; font-weight: semibold; color: white; text-decoration: none;">${
+//                 node.name
+//               }</a>
+//               <p style="font-size: 14px; color: #4b5563;">${node.hash}</p>
+//               ${
+//                 node.warning
+//                   ? `<p style="font-size: 14px; color: #d69e2e;">${node.warning}</p>`
+//                   : ""
+//               }
+//           </div>
+//       `;
+//   });
+//   html += "</div>";
 
-  // Models
-  html += `<div style="background-color: ${bgcolor}; padding: 24px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">`;
-  html +=
-    '<h2 style="margin-top: 0px; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Models</h2>';
+//   // Models
+//   html += `<div style="background-color: ${bgcolor}; padding: 24px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">`;
+//   html +=
+//     '<h2 style="margin-top: 0px; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Models</h2>';
 
-  Object.entries(data.models).forEach(([section, items]) => {
-    html += `
-    <div style="border-bottom: 1px solid #e2e8f0; padding-top: 8px; padding-bottom: 8px;">
-        <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${
-          section.charAt(0).toUpperCase() + section.slice(1)
-        }</h3>`;
-    items.forEach((item) => {
-      html += `<p style="font-size: 14px; color: ${textColor};">${item.name}</p>`;
-    });
-    html += "</div>";
-  });
-  html += "</div>";
+//   Object.entries(data.models).forEach(([section, items]) => {
+//     html += `
+//     <div style="border-bottom: 1px solid #e2e8f0; padding-top: 8px; padding-bottom: 8px;">
+//         <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${
+//           section.charAt(0).toUpperCase() + section.slice(1)
+//         }</h3>`;
+//     items.forEach((item) => {
+//       html += `<p style="font-size: 14px; color: ${textColor};">${item.name}</p>`;
+//     });
+//     html += "</div>";
+//   });
+//   html += "</div>";
 
-  // Models
-  html += `<div style="background-color: ${bgcolor}; padding: 24px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">`;
-  html +=
-    '<h2 style="margin-top: 0px; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Files</h2>';
+//   // Models
+//   html += `<div style="background-color: ${bgcolor}; padding: 24px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">`;
+//   html +=
+//     '<h2 style="margin-top: 0px; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Files</h2>';
 
-  Object.entries(data.files).forEach(([section, items]) => {
-    html += `
-    <div style="border-bottom: 1px solid #e2e8f0; padding-top: 8px; padding-bottom: 8px;">
-        <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${
-          section.charAt(0).toUpperCase() + section.slice(1)
-        }</h3>`;
-    items.forEach((item) => {
-      html += `<p style="font-size: 14px; color: ${textColor};">${item.name}</p>`;
-    });
-    html += "</div>";
-  });
-  html += "</div>";
+//   Object.entries(data.files).forEach(([section, items]) => {
+//     html += `
+//     <div style="border-bottom: 1px solid #e2e8f0; padding-top: 8px; padding-bottom: 8px;">
+//         <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${
+//           section.charAt(0).toUpperCase() + section.slice(1)
+//         }</h3>`;
+//     items.forEach((item) => {
+//       html += `<p style="font-size: 14px; color: ${textColor};">${item.name}</p>`;
+//     });
+//     html += "</div>";
+//   });
+//   html += "</div>";
 
-  html += "</div>";
-  return html;
-}
+//   html += "</div>";
+//   return html;
+// }
 
 // Modify the existing deployWorkflow function
 async function deployWorkflow() {
@@ -505,24 +494,24 @@ async function deployWorkflow() {
   /** @type {LGraph} */
   const graph = app.graph;
 
-  let { endpoint, apiKey, displayName } = getData();
+  let { endpoint, apiKey, displayName } = getData("local");
 
   if (!endpoint || !apiKey || apiKey === "" || endpoint === "") {
     configDialog.show();
     return;
   }
 
+  // Get Deployment Target metadata
   let deployMeta = graph.findNodesByType("ComfyDeploy");
 
   if (deployMeta.length == 0) {
+    // Create Deployment Target metadata
     const text = await inputDialog.input(
       "Create your deployment",
       "Workflow name",
     );
     if (!text) return;
-    console.log(text);
     app.graph.beforeChange();
-    registerCustomNodes();
     var node = LiteGraph.createNode("ComfyDeploy");
     node.configure({
       widgets_values: [text],
@@ -537,29 +526,31 @@ async function deployWorkflow() {
 
   const workflow_name = deployMetaNode.widgets[0].value;
   const workflow_id = deployMetaNode.widgets[1].value;
+  const version = deployMetaNode.widgets[2].value;
 
   const ok = await confirmDialog.confirm(
-    `Confirm deployment`,
+    "Confirm deployment",
     `
-    <div>
-
-    A new version of <button style="font-size: 18px;">${workflow_name}</button> will be deployed, do you confirm? 
-    <br><br>
-
-    <button style="font-size: 18px;">${displayName}</button>
-    <br>
-    <button style="font-size: 18px;">${endpoint}</button>
-
-    <br><br>
-    <label>
-    <input id="include-deps" type="checkbox" checked>Include dependency</input>
-    </label>
-    <br>
-    <label>
-    <input id="reuse-hash" type="checkbox" checked>Reuse hash from last version</input>
-    </label>
+    <div style="width: 100%; max-width: 800px; margin: 0 auto;">
+      <div style="background-color: #2a2a2a; padding: 20px; border-radius: 8px; margin-bottom: 20px; width: 100%;">
+        <h3 style="margin: 0 0 16px; color: #e0e0e0;">About to deploy new version</h3>
+        <div style="font-size: 14px; color: #4CAF50; margin-bottom: 15px;">Workflow name: ${workflow_name}</div>
+        <div style="font-size: 14px; color: #bdbdbd; margin-bottom: 5px;">Deploy to: (${displayName}) ${endpoint}</div>
+      </div>
+      
+      <div style="background-color: #2a2a2a; padding: 20px; border-radius: 8px; width: 100%;">
+        <h4 style="margin: 0 0 15px; color: #e0e0e0;">Deployment Options</h4>
+        <label style="display: flex; align-items: center; margin-bottom: 10px; color: #e0e0e0;">
+          <input id="include-deps" type="checkbox" checked style="margin-right: 10px;">
+          Include dependencies
+        </label>
+        <label style="display: flex; align-items: center; color: #e0e0e0;">
+          <input id="reuse-hash" type="checkbox" checked style="margin-right: 10px;">
+          Reuse previous version hash
+        </label>
+      </div>
     </div>
-    `,
+    `
   );
   if (!ok) return;
 
@@ -569,11 +560,12 @@ async function deployWorkflow() {
   if (endpoint.endsWith("/")) {
     endpoint = endpoint.slice(0, -1);
   }
-  loadingDialog.showLoading("Generating snapshot");
 
+  loadingDialog.showLoading("Generating snapshot and search model files");
+  // This is a function in comfyui-manager
   const snapshot = await fetch("/snapshot/get_current").then((x) => x.json());
-  // console.log(snapshot);
-  loadingDialog.close();
+
+
 
   if (!snapshot) {
     showError(
@@ -586,190 +578,362 @@ async function deployWorkflow() {
   const title = deploy.querySelector("#button-title");
 
   const prompt = await app.graphToPrompt();
-  let deps = undefined;
 
-  if (includeDeps) {
-    loadingDialog.showLoading("Fetching existing version");
+  if (!prompt) {
+    showError(
+      "Error when deploying",
+      "Unable to get input and output data, please check your workflow",
+    );
+    return;
+  }
 
-    const existing_workflow = await fetch(
-      endpoint + "/api/workflow/" + workflow_id,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + apiKey,
-        },
-      },
-    )
-      .then((x) => x.json())
-      .catch(() => {
-        return {};
-      });
+  function findModelFiles(prompt_output) {
+    const modelFiles = {};
+    
+    for (const nodeId in prompt_output) {
+      const node = prompt_output[nodeId];
+      
+      if (node.inputs && node.inputs.ckpt_name) {
+        modelFiles[nodeId] = node.inputs.ckpt_name;
+      }
+    }
+    
+    return modelFiles;
+  }
 
-    loadingDialog.close();
+  let modelFiles = findModelFiles(prompt.output);
 
-    loadingDialog.showLoading("Generating dependency graph");
-    deps = await generateDependencyGraph({
-      workflow_api: prompt.output,
-      snapshot: snapshot,
-      computeFileHash: async (file) => {
-        console.log(existing_workflow?.dependencies?.models);
+  // get all openart online model files
+  let checkpoints_res = await fetch(endpoint + '/api/volume/checkpoints', {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + apiKey,
+    },
+  });
 
-        // Match previous hash for models
-        if (reuseHash && existing_workflow?.dependencies?.models) {
-          const previousModelHash = Object.entries(
-            existing_workflow?.dependencies?.models,
-          ).flatMap(([key, value]) => {
-            return Object.values(value).map((x) => ({
-              ...x,
-              name: "models/" + key + "/" + x.name,
-            }));
-          });
-          console.log(previousModelHash);
+  const checkpoints = await checkpoints_res.json();
 
-          const match = previousModelHash.find((x) => {
-            console.log(file, x.name);
-            return file == x.name;
-          });
-          console.log(match);
-          if (match && match.hash) {
-            console.log("cached hash used");
-            return match.hash;
-          }
+  let checkpoints_list = checkpoints["checkpoints"];
+  let model_mapping = {
+  };
+  loadingDialog.close();
+  const model_ui = await confirmDialog.confirm(
+    "Model File Mapping",
+    `
+    <div style="display: flex; justify-content: space-between; width: 100%; max-height: 700px; overflow-y: auto;">
+      <div style="width: 20%;">
+        <h4 style="margin-bottom: 15px; color: #4a90e2;">Node ID</h4>
+        ${Object.entries(modelFiles).map(([id, model], index) => `
+          <div style="margin-bottom: 15px; padding: 10px; background-color: #2a2a2a; border-radius: 5px;">
+            <span style="display: block; word-break: break-all; font-size: 14px;" title="${id}">${id}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="width: 50%; margin-left: 10px;">
+          <h4 style="margin-bottom: 15px; color: #4a90e2;">Local Model Files</h4>
+          ${Object.entries(modelFiles).map(([id, model], index) => `
+            <div style="margin-bottom: 15px; padding: 10px; background-color: #2a2a2a; border-radius: 5px;">
+              <span style="display: block; word-break: break-all; font-size: 14px;" title="${model}">${truncateFilename(model, 40)}</span>
+            </div>
+          `).join('')}
+      </div>
+
+      <div style="width: 50%; margin-left: 10px;">
+        <h4 style="margin-bottom: 15px; color: #4a90e2;">OpenArt online model files</h4>
+        ${Object.entries(modelFiles).map(([id, model], index) => `
+          <div style="margin-bottom: 15px;">
+            <select id="select-${index}" style="width: 100%; padding: 8px; background-color: #2a2a2a; color: white; border: 1px solid #4a4a4a; border-radius: 5px;">
+              <option value="">Select</option>
+              ${checkpoints_list.map(onlineFile => `
+                <option value="${onlineFile}" title="${onlineFile}">${onlineFile}</option>
+              `).join('')}
+            </select>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    `
+  );
+  
+  function truncateFilename(filename, maxLength) {
+    if (filename.length <= maxLength) return filename;
+    const extension = filename.split('.').pop();
+    const nameWithoutExtension = filename.slice(0, -(extension.length + 1));
+    const truncatedName = nameWithoutExtension.slice(0, maxLength - 3 - extension.length) + '...';
+    return truncatedName + '.' + extension;
+  }
+  console.log('modelFiles', modelFiles);  
+  if (model_ui) {
+    model_mapping = Object.entries(modelFiles).reduce((acc, [id, localFile], index) => {
+      const select = document.getElementById(`select-${index}`);
+      const selectedOnlineFile = select.value;
+      if (selectedOnlineFile) {
+        acc[id] = {
+          localFile: localFile,
+          onlineFile: selectedOnlineFile
+        };
+      }
+      return acc;
+    }, {});
+  }
+
+  loadingDialog.showLoading("Replacing model files");
+  
+  let replace_model_workflow = prompt.workflow;
+  for (const [id, mapping] of Object.entries(model_mapping)) {
+    if (mapping.onlineFile) {
+      replace_model_workflow["nodes"].forEach(node => {
+        if (String(node.id) === String(id)) {
+          node.widgets_values = [mapping.onlineFile];
         }
-        console.log(file);
-        loadingDialog.showLoading("Generating hash", file);
-        const hash = await fetch(
-          `/comfyui-deploy/get-file-hash?file_path=${encodeURIComponent(file)}`,
-        ).then((x) => x.json());
-        loadingDialog.showLoading("Generating hash", file);
-        console.log(hash);
-        return hash.file_hash;
-      },
-      //   handleFileUpload: async (file, hash, prevhash) => {
-      //     console.log("Uploading ", file);
-      //     loadingDialog.showLoading("Uploading file", file);
-      //     try {
-      //       const { download_url } = await fetch(`/comfyui-deploy/upload-file`, {
-      //         method: "POST",
-      //         body: JSON.stringify({
-      //           file_path: file,
-      //           token: apiKey,
-      //           url: endpoint + "/api/upload-url",
-      //         }),
-      //       })
-      //         .then((x) => x.json())
-      //         .catch(() => {
-      //           loadingDialog.close();
-      //           confirmDialog.confirm("Error", "Unable to upload file " + file);
-      //         });
-      //       loadingDialog.showLoading("Uploaded file", file);
-      //       console.log(download_url);
-      //       return download_url;
-      //     } catch (error) {
-      //       return undefined;
-      //     }
-      //   },
-      existingDependencies: existing_workflow.dependencies,
-    });
+      });
+    }
+  }
+
+  loadingDialog.close();
+
+
+
+
+
+
+  // let deps = undefined;
+  // if (includeDeps) {
+  //   loadingDialog.showLoading("Fetching existing version");
+
+  //   const existing_workflow = await fetch(
+  //     endpoint + "/api/workflow/" + workflow_id,
+  //     {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: "Bearer " + apiKey,
+  //       },
+  //     },
+  //   )
+  //     .then((x) => x.json())
+  //     .catch(() => {
+  //       return {};
+  //     });
+
+  //   loadingDialog.close();
+
+  //   loadingDialog.showLoading("Generating dependency graph");
+  //   console.log('prompt', prompt);
+  //   console.log('snapshot', snapshot);
+  //   console.log('existing_workflow', existing_workflow);
+  //   // 通过 hash 去比对文件是否一致
+  //   const body = {
+  //     prompt_output_list: prompt.output,
+  //     snapshot: snapshot,
+  //   };
+  //   let deps_res = await fetch(endpoint + '/api/dependency-check', {
+  //     method: "POST",
+  //     body: JSON.stringify(body),
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       Authorization: "Bearer " + apiKey,
+  //     },
+  //   });
+  //   deps = await deps_res.json();
+    // deps = await generateDependencyGraph({
+    //   workflow_api: prompt.output,
+    //   snapshot: snapshot,
+    //   computeFileHash: async (file) => {
+    //     console.log(existing_workflow?.dependencies?.models);
+
+    //     // Match previous hash for models
+    //     if (reuseHash && existing_workflow?.dependencies?.models) {
+    //       const previousModelHash = Object.entries(
+    //         existing_workflow?.dependencies?.models,
+    //       ).flatMap(([key, value]) => {
+    //         return Object.values(value).map((x) => ({
+    //           ...x,
+    //           name: "models/" + key + "/" + x.name,
+    //         }));
+    //       });
+    //       console.log(previousModelHash);
+
+    //       const match = previousModelHash.find((x) => {
+    //         console.log(file, x.name);
+    //         return file == x.name;
+    //       });
+    //       console.log(match);
+    //       if (match && match.hash) {
+    //         console.log("cached hash used");
+    //         return match.hash;
+    //       }
+    //     }
+    //     console.log(file);
+    //     loadingDialog.showLoading("Generating hash", file);
+    //     const hash = await fetch(
+    //       `/comfyui-deploy/get-file-hash?file_path=${encodeURIComponent(file)}`,
+    //     ).then((x) => x.json());
+    //     loadingDialog.showLoading("Generating hash", file);
+    //     console.log(hash);
+    //     return hash.file_hash;
+    //   },
+    //   //   handleFileUpload: async (file, hash, prevhash) => {
+    //   //     console.log("Uploading ", file);
+    //   //     loadingDialog.showLoading("Uploading file", file);
+    //   //     try {
+    //   //       const { download_url } = await fetch(`/comfyui-deploy/upload-file`, {
+    //   //         method: "POST",
+    //   //         body: JSON.stringify({
+    //   //           file_path: file,
+    //   //           token: apiKey,
+    //   //           url: endpoint + "/api/upload-url",
+    //   //         }),
+    //   //       })
+    //   //         .then((x) => x.json())
+    //   //         .catch(() => {
+    //   //           loadingDialog.close();
+    //   //           confirmDialog.confirm("Error", "Unable to upload file " + file);
+    //   //         });
+    //   //       loadingDialog.showLoading("Uploaded file", file);
+    //   //       console.log(download_url);
+    //   //       return download_url;
+    //   //     } catch (error) {
+    //   //       return undefined;
+    //   //     }
+    //   //   },
+    //   existingDependencies: existing_workflow.dependencies,
+    // });
+
+    // console.log('deps', deps);
 
     // Need to find a way to include this if this is not included in comfyui-json level
-    if (
-      !deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy"] &&
-      !deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy.git"]
-    )
-      deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy"] = {
-        url: "https://github.com/BennyKok/comfyui-deploy",
-        install_type: "git-clone",
-        hash:
-          snapshot?.git_custom_nodes?.[
-            "https://github.com/BennyKok/comfyui-deploy"
-          ]?.hash ?? "HEAD",
-        name: "ComfyUI Deploy",
-      };
+  //   if (
+  //     !deps.custom_nodes["https://github.com/kulsisme/openart-comfyui-deploy"] &&
+  //     !deps.custom_nodes["https://github.com/kulsisme/openart-comfyui-deploy.git"]
+  //   )
+  //     deps.custom_nodes["https://github.com/kulsisme/openart-comfyui-deploy"] = {
+  //       url: "https://github.com/kulsisme/openart-comfyui-deploy",
+  //       install_type: "git-clone",
+  //       hash:
+  //         snapshot?.git_custom_nodes?.[
+  //           "https://github.com/kulsisme/openart-comfyui-deploy"
+  //         ]?.hash ?? "HEAD",
+  //       name: "OpenArt ComfyUI Deploy",
+  //     };
 
-    loadingDialog.close();
+  //   loadingDialog.close();
 
-    const depsOk = await confirmDialog.confirm(
-      "Check dependencies",
-      // JSON.stringify(deps, null, 2),
-      `
-      <div>
-        You will need to create a cloud machine with the following configuration on ComfyDeploy
-        <ol style="text-align: left; margin-top: 10px;">
-            <li>Review the dependencies listed in the graph below</li>
-            <li>Create a new cloud machine with the required configuration</li>
-            <li>Install missing models and check missing files</li>
-            <li>Deploy your workflow to the newly created machine</li>
-        </ol>
-      </div>
-      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">${loadingIcon}</div>
-      <iframe 
-      style="z-index: 10; min-width: 600px; max-width: 1024px; min-height: 600px; border: none; background-color: transparent;"
-      src="https://www.comfydeploy.com/dependency-graph?deps=${encodeURIComponent(
-        JSON.stringify(deps),
-      )}" />`,
-      // createDynamicUIHtml(deps),
-    );
-    if (!depsOk) return;
+  //   const depsOk = await confirmDialog.confirm(
+  //     "Check dependencies",
+  //     // JSON.stringify(deps, null, 2),
+  //     `
+  //     <div>
+  //       You will need to create a cloud machine with the following configuration on ComfyDeploy
+  //       <ol style="text-align: left; margin-top: 10px;">
+  //           <li>Review the dependencies listed in the graph below</li>
+  //           <li>Create a new cloud machine with the required configuration</li>
+  //           <li>Install missing models and check missing files</li>
+  //           <li>Deploy your workflow to the newly created machine</li>
+  //       </ol>
+  //     </div>
+  //     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">${loadingIcon}</div>
+  //     <iframe 
+  //     style="z-index: 10; min-width: 600px; max-width: 1024px; min-height: 600px; border: none; background-color: transparent;"
+  //     src="https://www.comfydeploy.com/dependency-graph?deps=${encodeURIComponent(
+  //       JSON.stringify(deps),
+  //     )}" />`,
+  //     // createDynamicUIHtml(deps),
+  //   );
+  //   if (!depsOk) return;
 
-    console.log(deps);
-  }
+  // }
+  
+  let deployed_workflow_id = '';
+  let deployed_workflow_version = '';
 
-  loadingDialog.showLoading("Deploying...");
+  var ws = new WebSocket("ws://localhost:3000/ws");
+  ws.onmessage = function(event) {
+    console.log('收到消息', event);
+    var messages = document.getElementById('messages');
+    if (messages) { 
+      
+      var message = document.createElement('p');
+      console.log('event.data', event.data);
+      if(event.data.includes('id') && event.data.includes('version')){
+        const data = JSON.parse(event.data);
+        deployed_workflow_id = data.id;
+        deployed_workflow_version = data.version;
+      } else {
+        message.textContent = event.data;
+        message.style.margin = '5px 0';
+        message.style.borderBottom = '1px solid #3a3a3a';
+        message.style.paddingBottom = '5px';
+        messages.appendChild(message);
+        messages.scrollTop = messages.scrollHeight;
+      }
+     
+    }else{
+      console.log('can not find messages element');
+    }
+  };
 
-  title.innerText = "Deploying...";
-  title.style.color = "orange";
+  const deploy_logs = await confirmDialog.confirm(
+    "Realtime ",
+    `
+    <div style="width: 100%; max-width: 800px; margin: 0 auto; background-color: #2a2a2a; padding: 20px; border-radius: 8px;">
+      <div id="messages" style="height: 400px; overflow-y: auto; background-color: #1a1a1a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 14px; color: #b0b0b0;">fetching logs...</div>
+    </div>
+    `
+  );
 
-  // console.log(prompt);
+  // loadingDialog.showLoading("Deploying...");
+
+  // title.innerText = "Deploying...";
+  // title.style.color = "orange";
+
 
   // TODO trim the ending / from endpoint is there is
-  if (endpoint.endsWith("/")) {
-    endpoint = endpoint.slice(0, -1);
-  }
+  // if (endpoint.endsWith("/")) {
+  //   endpoint = endpoint.slice(0, -1);
+  // }
 
-  // console.log(prompt.workflow);
+  // const apiRoute = endpoint + "/api/workflow";
 
-  const apiRoute = endpoint + "/api/workflow";
-  // const userId = apiKey
-  try {
-    const body = {
-      workflow_name,
-      workflow_id,
-      workflow: prompt.workflow,
-      workflow_api: prompt.output,
-      snapshot: snapshot,
-      dependencies: deps,
-    };
-    console.log(body);
-    let data = await fetch(apiRoute, {
-      method: "POST",
-      body: JSON.stringify(body),
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + apiKey,
-      },
-    });
+  
+  // try {
+  //   const body = {
+  //     workflow_name,
+  //     workflow_id,
+  //     workflow: prompt.workflow,
+  //     workflow_api: prompt.output,
+  //     snapshot: snapshot,
+  //     // dependencies: deps,
+  //   };
+  //   let data = await fetch(apiRoute, {
+  //     method: "POST",
+  //     body: JSON.stringify(body),
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       Authorization: "Bearer " + apiKey,
+  //     },
+  //   });
 
-    console.log(data);
 
-    if (data.status !== 200) {
-      throw new Error(await data.text());
-    } else {
-      data = await data.json();
-    }
+  //   if (data.status !== 200) {
+  //     throw new Error(await data.text());
+  //   } else {
+  //     data = await data.json();
+  //   }
 
-    loadingDialog.close();
+  //   loadingDialog.close();
 
     title.textContent = "Done";
     title.style.color = "green";
 
-    deployMetaNode.widgets[1].value = data.workflow_id;
-    deployMetaNode.widgets[2].value = data.version;
+    deployMetaNode.widgets[1].value = deployed_workflow_id;
+    deployMetaNode.widgets[2].value = deployed_workflow_version;
     graph.change();
 
     infoDialog.show(
-      `<span style="color:green;">Deployed successfully!</span>  <a style="color:white;" target="_blank" href=${endpoint}/workflows/${data.workflow_id}>-> View here</a> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: ${data.version} <br/>`,
+      `<span style="color:green;">Deployed successfully!</span>  <a style="color:white;" target="_blank" href=${endpoint}/workflows/${deployed_workflow_id}>-> View here</a> <br/> <br/> Workflow ID: ${deployed_workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: ${deployed_workflow_version} <br/>`,
     );
 
     // // Refresh the workflows list in the sidebar
@@ -784,17 +948,17 @@ async function deployWorkflow() {
       title.textContent = "Deploy";
       title.style.color = "white";
     }, 1000);
-  } catch (e) {
-    loadingDialog.close();
-    app.ui.dialog.show(e);
-    console.error(e);
-    title.textContent = "Error";
-    title.style.color = "red";
-    setTimeout(() => {
-      title.textContent = "Deploy";
-      title.style.color = "white";
-    }, 1000);
-  }
+  // } catch (e) {
+  //   loadingDialog.close();
+  //   app.ui.dialog.show(e);
+  //   console.error(e);
+  //   title.textContent = "Error";
+  //   title.style.color = "red";
+  //   setTimeout(() => {
+  //     title.textContent = "Deploy";
+  //     title.style.color = "white";
+  //   }, 1000);
+  // }
 }
 
 // Add this function to refresh the workflows list
@@ -876,7 +1040,7 @@ function refreshWorkflowsList(el) {
     });
 }
 
-function addButton() {
+function addDeployButton() {
   const menu = document.querySelector(".comfy-menu");
 
   const deploy = document.createElement("button");
@@ -978,7 +1142,7 @@ export class LoadingDialog extends ComfyDialog {
   constructor() {
     super();
     this.element.classList.add("comfy-normal-modal");
-    // this.element.style.paddingBottom = "20px";
+    this.element.style.paddingBottom = "20px";
   }
 
   createButtons() {
@@ -1093,39 +1257,25 @@ export class ConfirmDialog extends InfoDialog {
 
   createButtons() {
     return [
-      $el(
-        "div",
-        {
-          type: "div",
-          style: {
-            display: "flex",
-            gap: "6px",
-            justifyContent: "flex-end",
-            width: "100%",
-          },
+      $el("button", {
+        type: "button",
+        textContent: "关闭",
+        onclick: () => {
+          this.callback?.(false);
+          this.close();
         },
-        [
-          $el("button", {
-            type: "button",
-            textContent: "Close",
-            onclick: () => {
-              this.callback?.(false);
-              this.close();
-            },
-          }),
-          $el("button", {
-            type: "button",
-            textContent: "Confirm",
-            style: {
-              color: "green",
-            },
-            onclick: () => {
-              this.callback?.(true);
-              this.close();
-            },
-          }),
-        ],
-      ),
+      }),
+      $el("button", {
+        type: "button",
+        textContent: "确认",
+        style: {
+          color: "green",
+        },
+        onclick: () => {
+          this.callback?.(true);
+          this.close();
+        },
+      }),
     ];
   }
 
@@ -1133,13 +1283,14 @@ export class ConfirmDialog extends InfoDialog {
     return new Promise((resolve, reject) => {
       this.callback = resolve;
       this.show(`
-      <div style="width: 100%; max-width: 600px; display: flex; gap: 18px; flex-direction: column; overflow: unset; position: relative;">
+      <div style="width: 800px !important; max-width: 800px !important; display: flex; gap: 18px; flex-direction: column; overflow: unset; position: relative;">
         <h3 style="margin: 0px;">${title}</h3>
         ${message}
-        </div>
+      </div>
       `);
     });
   }
+
 }
 
 export const inputDialog = new InputDialog();
